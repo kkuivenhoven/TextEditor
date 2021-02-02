@@ -375,6 +375,7 @@ void MainWindow::on_clearSearch_clicked() {
     }
 }
 
+
 void MainWindow::on_wordCount_clicked() {
     QPushButton *buttonSender = qobject_cast<QPushButton*>(sender());
     QHash<QWidget*, int>::const_iterator i = _totalWindows.find(buttonSender->parentWidget());
@@ -404,5 +405,6 @@ void MainWindow::on_wordCount_clicked() {
     }
 
 }
+
 
 /* https://stackoverflow.com/questions/3860112/multiple-github-accounts-on-the-same-computer */
