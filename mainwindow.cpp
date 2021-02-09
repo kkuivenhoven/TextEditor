@@ -9,20 +9,30 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("Untitled Document");
     _windowCount = 0;
+    _qMainWindowCount = 0;
     this->window()->setWindowState(Qt::WindowActive);
+    this->window()->setAccessibleName(QString::number(_windowCount));
+    this->window()->setObjectName("HELLO 1");
 
     _windowList.append(this->window());
-    _totalWindows.insert(ui->centralWidget, _windowCount);
+    // _totalWindows.insert(ui->centralWidget, _windowCount);
+    _totalWindows.insert(this->window(), _windowCount);
     _textEditPerWindow.insert(_windowCount, ui->textEdit);
     QLineEdit *searchBar = ui->searchBar;
     _searchBarRecord.insert(_windowCount, searchBar);
     _windowCount++;
 
-    _optionsMenu = this->menuBar()->addMenu(tr("&Options"));
-    QAction *clearText = _optionsMenu->addAction("Clear Text", this, SLOT(on_clear_text_click()));
-    QAction *openFile = _optionsMenu->addAction("Open File", this, SLOT(on_open_file_click()));
-    QAction *createNewFile = _optionsMenu->addAction("Create New File", this, SLOT(on_click_create_new_file()));
-    QAction *saveFile = _optionsMenu->addAction("Save File", this, SLOT(on_pushButton_clicked()));
+    // _optionsMenu = this->menuBar()->addMenu(tr("&Options"));
+    QMenu *optionsMenu = this->menuBar()->addMenu(tr("&Options"));
+    QAction *clearText = optionsMenu->addAction("Clear Text", this, SLOT(on_clear_text_click()));
+    QAction *copyText = optionsMenu->addAction("Copy Text", this, SLOT(on_copy_text_click()));
+    QAction *openFile = optionsMenu->addAction("Open File", this, SLOT(on_open_file_click()));
+    QAction *createNewFile = optionsMenu->addAction("Create New File", this, SLOT(on_click_create_new_file()));
+    QAction *saveFile = optionsMenu->addAction("Save File", this, SLOT(on_saveFileMenu_clicked()));
+    QAction *wordCount = optionsMenu->addAction("Word Count", this, SLOT(on_wordCountMenu_clicked()));
+    QAction *searchReplaceMenuItem = optionsMenu->addAction("Search and Replace", this, SLOT(on_searchReplaceMenu()));
+    QAction *quitMenuItem = optionsMenu->addAction("Quit", this, SLOT(on_quitMenu_clicked()));
+    // QAction *newQMainWindow = optionsMenu->addAction("New QMainWindow", this, SLOT(onClickCreate_newQMainWindow()));
 
     // QAction *saveFile = _optionsMenu->addAction(tr("Save File"));
     // QAction *saveFile = _optionsMenu->addAction("Save File", this, SLOT(on_saveFileButton_clicked()));
@@ -31,13 +41,12 @@ MainWindow::MainWindow(QWidget *parent) :
     // connect(saveFile, &QAction::triggered, this, &MainWindow::on_pushButton_clicked);
     // connect(saveFile, SIGNAL(QAction::triggered), this, SLOT(MainWindow::on_pushButton_clicked(QAction*)));
 
-
-    this->menuBar()->addMenu(_optionsMenu);
-    _menuActions.push_back(clearText);
+    // this->menuBar()->addMenu(optionsMenu);
+    /* _menuActions.push_back(clearText);
     _menuActions.push_back(openFile);
     _menuActions.push_back(createNewFile);
     _menuActions.push_back(saveFile);
-    this->menuBar()->addSeparator();
+    this->menuBar()->addSeparator(); */
 }
 
 
@@ -49,6 +58,51 @@ MainWindow::~MainWindow() {
 void MainWindow::on_quitButton_clicked() {
     QPushButton* buttonSender = qobject_cast<QPushButton*>(sender());
     buttonSender->parentWidget()->window()->close();
+}
+
+
+void MainWindow::on_quitWindow_clicked() {
+    QAction* action = qobject_cast<QAction*>(sender());
+    action->parentWidget()->window()->close();
+}
+
+
+void MainWindow::on_quitMenu_clicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
+    QWidget *currentWindow = nullptr;
+    int numActionWidgets = actionWidgets.length();
+    for(int i = 0; i < actionWidgets.length(); i++) {
+        QWidget *tmp = actionWidgets.at(i);
+        QWidget *parent = tmp->parentWidget();
+        currentWindow = parent;
+        if(parent->isWindow()) {
+           QWidget *widgetTmp = parent;
+           currentWindow = widgetTmp;
+        }
+    }
+    currentWindow->parentWidget()->close();
+}
+
+
+void MainWindow::on_copy_text_click() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(textEdit->toPlainText());
+        }
+    }
 }
 
 
@@ -87,69 +141,39 @@ void MainWindow::on_saveFileButton_clicked() {
 }
 
 
-// void MainWindow::on_pushButton_clicked(QAction *action) {
-void MainWindow::on_pushButton_clicked() {
-    // QMessageBox msgBox;
-    // msgBox.setText("Shalom");
-    // msgBox.exec();
-    // QAction *actionSender = qobject_cast<QAction*>(sender());
-    // QWidget *theParentWidget = actionSender->parentWidget();
-    // QWidget *theParentWindow = theParentWidget->window();
-    // QWidget *theWindow = QApplication::activeWindow();
-    /* if(theWindow == theParentWindow) {
-        QMessageBox msgBox;
-        msgBox.setText("Shalom");
-        msgBox.exec();
-    } else {
-        QMessageBox msgBox;
-        msgBox.setText("They are not the same");
-        msgBox.exec();
-    } */
-    // QHash<QWidget*, int>::const_iterator i = _totalParentWindows.find(theParentWindow);
-    // QHash<QWidget*, int>::const_iterator i = _totalWindows.find(action->parentWidget());
-    // QHash<QWidget*, int>::const_iterator i = _totalWindows.find(theWindow);
-    // QWidget *widget = nullptr;
-    // int place;
-    // if(i != _totalWindows.end()) {
-    // if(i != _totalParentWindows.end()) {
-       // widget = i.key();
-       // place = i.value();
-       // theWindow->close();
-    // } else {
-        // QMessageBox msgBox;
-        // msgBox.setText("Shalom");
-        // msgBox.exec();
-    // }
-    // theWindow->close();
-    /* if(i == _totalParentWindows.end()) {
-        theWindow->close();
-        // QMessageBox msgBox;
-        // msgBox.setText("Shalom");
-        // msgBox.exec();
-    } */
-    /*
-    if(widget != nullptr) {
-        theWindow->close();
-        /* QString filename = QFileDialog::getSaveFileName(widget, tr("Save File"),
-                widget->windowTitle());
-        QFile file(filename);
-        if(!file.open(QIODevice::WriteOnly)) {
-            QMessageBox::information(widget, tr("Unable to open file"),
-                 file.errorString());
-            return;
+void MainWindow::on_saveFileMenu_clicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
         }
-        QTextEdit* textEdit = _textEditPerWindow[place];
-        QString plainText = textEdit->toPlainText();
-        QTextStream out(&file);
-        out << plainText;
-        file.close(); */
-    /* } else {
-        QMessageBox msgBox;
-        msgBox.setText("Unable to save the document. "
+        if(widget != nullptr) {
+            QString filename = QFileDialog::getSaveFileName(widget, tr("Save File"),
+                widget->windowTitle());
+            QFile file(filename);
+            if(!file.open(QIODevice::WriteOnly)) {
+                QMessageBox::information(widget, tr("Unable to open file"),
+                 file.errorString());
+                return;
+            }
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            QString plainText = textEdit->toPlainText();
+            QTextStream out(&file);
+            out << plainText;
+            file.close();
+        } else {
+            QMessageBox msgBox;
+            msgBox.setText("Unable to save the document. "
                        "Please try again.");
-        msgBox.exec();
-    } */
-    // return;
+            msgBox.exec();
+        }
+    }
 }
 
 
@@ -158,61 +182,281 @@ void MainWindow::on_textEdit_copyAvailable(bool b) {
 
 
 void MainWindow::on_clear_text_click() {
-    ui->textEdit->clear();
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            textEdit->clear();
+        }
+    }
 }
 
 
 void MainWindow::on_open_file_click() {
     QAction *actionSender = qobject_cast<QAction*>(sender());
-    QWidget *theParentWidget = actionSender->parentWidget();
-    QWidget *theParentWindow = theParentWidget->window();
-    QByteArray contents;
-    QHash<QWidget*, int>::const_iterator i = _totalWindows.find(theParentWindow);
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
     QWidget *widget = nullptr;
     int place;
-    if(i != _totalWindows.end()) {
-       widget = i.key();
-       place = i.value();
+    QTextEdit *textEdit;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        textEdit = _textEditPerWindow[place];
+        QString contents;
+        QString fileName = QFileDialog::getOpenFileName(currentWindow->parentWidget(),
+                  tr("Open File"), QDir::homePath());
+        QFile file(fileName);
+        if(!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::information(currentWindow->parentWidget(), tr("Unable to open file"),
+                     file.errorString());
+            return;
+        }
+        while(!file.atEnd()) {
+            QByteArray line = file.readLine();
+            contents.append(line);
+        }
+        QString backSlash = "/";
+        int backSlashLocation = fileName.lastIndexOf(backSlash);
+        fileName.remove(0, backSlashLocation+1);
+
+        QString contentsStr = QString::fromStdString(contents.toStdString());
+        textEdit->setPlainText(contentsStr);
+        widget->setWindowTitle(fileName);
+    }
+}
+
+
+/* https://stackoverflow.com/questions/7284509/adding-slots-to-automatically-created-menu-items */
+/* https://schneide.blog/2010/07/26/non-trivial-custom-data-in-qactions/ */
+/* https://www.qtcentre.org/threads/12101-setData() */
+void MainWindow::onClickCreate_newQMainWindow() {
+    QMainWindow *mainWindow = new QMainWindow(this);
+
+    QMenuBar *menu_bar = new QMenuBar(mainWindow);
+    QMenu *optionsMenu = menu_bar->addMenu("&Options");
+    QAction *quitQMainWindow = new QAction("Quit QMainWindow");
+    QAction *wordCount = new QAction("Word Count");
+
+    menu_bar->addAction(quitQMainWindow);
+    menu_bar->addAction(wordCount);
+    connect(quitQMainWindow, SIGNAL(triggered(bool)), this, SLOT(onClickQMainWindowQuit()));
+    connect(wordCount, SIGNAL(triggered(bool)), this, SLOT(onClickWordCount()));
+    mainWindow->setMenuBar(menu_bar);
+    mainWindow->setObjectName("HELLO 2");
+
+    QTextEdit *windowTextEdit = new QTextEdit(mainWindow);
+
+    mainWindow->show();
+    int count = 0;
+    count += 1;
+
+    _qMainWindowCount += 1;
+}
+
+
+void MainWindow::onClickWordCount() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
+    QWidget *currentWindow = nullptr;
+    for(int i = 0; i < actionWidgets.length(); i++) {
+        QWidget *tmp = actionWidgets.at(i);
+        QWidget *parent = tmp->parentWidget();
+        if(parent->isWindow()) {
+           QWidget *widgetTmp = parent;
+           currentWindow = widgetTmp;
+        }
+    }
+    QWidget *widget = nullptr;
+    int place;
+    QTextEdit* textEdit;
+    QString plainText;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow);
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            textEdit = _textEditPerWindow[place];
+            plainText = textEdit->toPlainText();
+            plainText.replace("\n", " ");
+            QStringList list = plainText.split(" ");
+            int count = 0;
+            for(int i = 0; i < list.size(); i++) {
+                QString tmp = list.at(i);
+                if(tmp.length() > 0) {
+                    count += 1;
+                }
+            }
+            QMessageBox msgBox;
+            msgBox.setText("Word count is: " + QString::number(count));
+            msgBox.exec();
+        }
     } else {
         QMessageBox msgBox;
-        msgBox.setText("Shalom");
+        msgBox.setText(" current window is null ptr");
         msgBox.exec();
     }
+}
 
-    /*
-    // QString fileName = QFileDialog::getOpenFileName(this,
-    QString fileName = QFileDialog::getOpenFileName(theParentWindow,
-                          tr("Open File"), QDir::homePath());
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly)) {
-        // QMessageBox::information(this, tr("Unable to open file"),
-        QMessageBox::information(theParentWindow, tr("Unable to open file"),
-                                 file.errorString());
-        return;
-    }
-    while(!file.atEnd()) {
-        QByteArray line = file.readLine();
-        contents.append(line);
-    }
-    QString backSlash = "/";
-    int backSlashLocation = fileName.lastIndexOf(backSlash);
-    fileName.remove(0, backSlashLocation+1);
 
-    QString contentsStr = QString::fromStdString(contents.toStdString());
-    ui->textEdit->setPlainText(contentsStr);
-    this->setWindowTitle(fileName);
-    */
+void MainWindow::on_wordCountMenu_clicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
+    QWidget *currentWindow = nullptr;
+    int numActionWidgets = actionWidgets.length();
+    for(int i = 0; i < actionWidgets.length(); i++) {
+        QWidget *tmp = actionWidgets.at(i);
+        QWidget *parent = tmp->parentWidget();
+        currentWindow = parent;
+        if(parent->isWindow()) {
+           QWidget *widgetTmp = parent;
+           currentWindow = widgetTmp;
+        }
+    }
+    QWidget *widget = nullptr;
+    int place;
+    QTextEdit* textEdit;
+    QString plainText;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            textEdit = _textEditPerWindow[place];
+            plainText = textEdit->toPlainText();
+            plainText.replace("\n", " ");
+            QStringList list = plainText.split(" ");
+            int count = 0;
+            for(int i = 0; i < list.size(); i++) {
+                QString tmp = list.at(i);
+                if(tmp.length() > 0) {
+                    count += 1;
+                }
+            }
+            QMessageBox msgBox;
+            msgBox.setText("Word count is: " + QString::number(count));
+            msgBox.exec();
+        }
+    }
+}
+
+
+// https://stackoverflow.com/questions/4046839/how-to-get-sender-widget-with-a-signal-slot-mechanism
+void MainWindow::onClickQMainWindowQuit() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
+    for(int i = 0; i < actionWidgets.length(); i++) {
+        QWidget *tmp = actionWidgets.at(i);
+        QWidget *parent = tmp->parentWidget();
+        if(parent->isWindow()) {
+           QWidget *widgetTmp = parent;
+           int so = 1;
+           so += 1;
+           widgetTmp->close();
+        }
+    }
+    int count = 0;
+    count += 1;
+}
+
+
+QWidget* MainWindow::_getCurrentWindow(QAction *actionSender, QWidget *currentWindow) {
+    QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
+    for(int i = 0; i < actionWidgets.length(); i++) {
+        QWidget *tmp = actionWidgets.at(i);
+        QWidget *parent = tmp->parentWidget();
+        currentWindow = parent;
+    }
+    return currentWindow;
+}
+
+
+void MainWindow::on_searchReplaceMenu() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            QString plainText = textEdit->toPlainText();
+            QDialog *dialog = new QDialog(widget);
+            QFormLayout form(dialog);
+            form.addRow(new QLabel("User input: "));
+            QString value1 = QString(" Value1: ");
+            QLineEdit *spinBox1 = new QLineEdit(dialog);
+            form.addRow(value1, spinBox1);
+            QString value2 = QString(" Value2: ");
+            QLineEdit *spinBox2 = new QLineEdit(dialog);
+            form.addRow(value2, spinBox2);
+            QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                           Qt::Horizontal, dialog);
+            form.addRow(&buttonBox);
+            QObject::connect(&buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+            QObject::connect(&buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+            if(dialog->exec() == QDialog::Accepted) {
+                QString textOne = spinBox1->text();
+                QString textTwo = spinBox2->text();
+                plainText.replace(textOne, textTwo);
+                textEdit->setPlainText(plainText);
+            } else {
+                dialog->close();
+            }
+        } else {
+            QMessageBox msgBox;
+            msgBox.setText("Unable to search and replace for this word."
+                       "Please try again.");
+            msgBox.exec();
+        }
+    }
 }
 
 
 void MainWindow::on_click_create_new_file() {
     QWidget *window = new QWidget;
     window->setAccessibleName(QString::number(_windowCount));
+    window->setObjectName("HELLO 2");
+
     QVBoxLayout *vbox = new QVBoxLayout();
     window->setLayout(vbox);
-    QMenuBar *menu_bar = new QMenuBar();
-    menu_bar->addMenu(_optionsMenu);
+
+    QMenuBar *menu_bar = new QMenuBar(window);
+
+    QMenu *optionsMenu = menu_bar->addMenu(tr("&Options"));
+    QAction *clearText = optionsMenu->addAction("Clear Text", this, SLOT(on_clear_text_click()));
+    QAction *copyText = optionsMenu->addAction("Copy Text", this, SLOT(on_copy_text_click()));
+    QAction *openFile = optionsMenu->addAction("Open File", this, SLOT(on_open_file_click()));
+    QAction *createNewFile = optionsMenu->addAction("Create New File", this, SLOT(on_click_create_new_file()));
+    QAction *saveFile = optionsMenu->addAction("Save File", this, SLOT(on_saveFileMenu_clicked()));
+    QAction *wordCount = optionsMenu->addAction("Word Count", this, SLOT(on_wordCountMenu_clicked()));
+    QAction *searchReplaceMenuItem = optionsMenu->addAction("Search and Replace", this, SLOT(on_searchReplaceMenu()));
+    QAction *quitMenuOption = optionsMenu->addAction("Quit", this, SLOT(on_quitMenu_clicked()));
+
+    menu_bar->addMenu(optionsMenu);
     vbox->addWidget(menu_bar);
+
     QLineEdit *searchBarEdit = new QLineEdit();
     vbox->addWidget(searchBarEdit);
     QPushButton *searchBtn = new QPushButton("&Search");
@@ -239,6 +483,7 @@ void MainWindow::on_click_create_new_file() {
     vbox->addWidget(quitButton);
     vbox->addWidget(saveFileButton);
     vbox->addWidget(searchReplaceButton);
+    window->setAccessibleName(QString::number(_windowCount));
     window->setWindowTitle("Untitled Document");
     window->show();
     window->setWindowState(Qt::WindowActive);
