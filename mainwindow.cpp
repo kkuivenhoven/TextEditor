@@ -14,15 +14,33 @@ MainWindow::MainWindow(QWidget *parent) :
     this->window()->setAccessibleName(QString::number(_windowCount));
     this->window()->setObjectName("HELLO 1");
 
+    QTextEdit *textEdit = new QTextEdit();
+    QWidget *window = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout();
+
+    QLineEdit *searchBarEdit = new QLineEdit();
+    vbox->addWidget(searchBarEdit);
+    QPushButton *searchBtn = new QPushButton("&Search");
+    vbox->addWidget(searchBtn);
+    QPushButton *clearBtn = new QPushButton("&Clear");
+    vbox->addWidget(clearBtn);
+    QObject::connect(searchBtn, &QPushButton::released, this, &MainWindow::on_searchButton_clicked);
+    QObject::connect(clearBtn, &QPushButton::released, this, &MainWindow::on_clearSearch_clicked);
+
+    vbox->addWidget(textEdit);
+    window->setLayout(vbox);
+
+    setCentralWidget(window);
+
     _windowList.append(this->window());
     // _totalWindows.insert(ui->centralWidget, _windowCount);
     _totalWindows.insert(this->window(), _windowCount);
-    _textEditPerWindow.insert(_windowCount, ui->textEdit);
+    // _textEditPerWindow.insert(_windowCount, ui->textEdit);
+    _textEditPerWindow.insert(_windowCount, textEdit);
     QLineEdit *searchBar = ui->searchBar;
     _searchBarRecord.insert(_windowCount, searchBar);
     _windowCount++;
 
-    // _optionsMenu = this->menuBar()->addMenu(tr("&Options"));
     QMenu *optionsMenu = this->menuBar()->addMenu(tr("&Options"));
     QAction *clearText = optionsMenu->addAction("Clear Text", this, SLOT(on_clear_text_click()));
     QAction *copyText = optionsMenu->addAction("Copy Text", this, SLOT(on_copy_text_click()));
@@ -32,21 +50,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QAction *wordCount = optionsMenu->addAction("Word Count", this, SLOT(on_wordCountMenu_clicked()));
     QAction *searchReplaceMenuItem = optionsMenu->addAction("Search and Replace", this, SLOT(on_searchReplaceMenu()));
     QAction *quitMenuItem = optionsMenu->addAction("Quit", this, SLOT(on_quitMenu_clicked()));
-    // QAction *newQMainWindow = optionsMenu->addAction("New QMainWindow", this, SLOT(onClickCreate_newQMainWindow()));
 
-    // QAction *saveFile = _optionsMenu->addAction(tr("Save File"));
-    // QAction *saveFile = _optionsMenu->addAction("Save File", this, SLOT(on_saveFileButton_clicked()));
-    // connect(_optionsMenu, SIGNAL(triggered(QAction*)), SLOT(on_pushButton_clicked(QAction*)));
-    // connect(saveFile, SIGNAL(triggered(QAction*)), SLOT(on_pushButton_clicked(QAction*)));
-    // connect(saveFile, &QAction::triggered, this, &MainWindow::on_pushButton_clicked);
-    // connect(saveFile, SIGNAL(QAction::triggered), this, SLOT(MainWindow::on_pushButton_clicked(QAction*)));
-
-    // this->menuBar()->addMenu(optionsMenu);
-    /* _menuActions.push_back(clearText);
-    _menuActions.push_back(openFile);
-    _menuActions.push_back(createNewFile);
-    _menuActions.push_back(saveFile);
-    this->menuBar()->addSeparator(); */
+    MyCustomWidget *customWidget = new MyCustomWidget();
 }
 
 
@@ -55,8 +60,24 @@ MainWindow::~MainWindow() {
 }
 
 
+/* https://stackoverflow.com/questions/17480984/qt-how-do-i-handle-the-event-of-the-user-pressing-the-x-close-button */
+/* void MainWindow::closeEvent(QCloseEvent *event) {
+// bool MainWindow::closeWindowEvent() {
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Text Editor",
+                                                                tr("Are you sure you want to exit \nthe Text Editor application?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes) {
+        event->ignore();
+    } else {
+        event->accept();
+    }
+} */
+
+
 void MainWindow::on_quitButton_clicked() {
     QPushButton* buttonSender = qobject_cast<QPushButton*>(sender());
+    QWidget* widget = buttonSender->parentWidget();
     buttonSender->parentWidget()->window()->close();
 }
 
@@ -71,7 +92,6 @@ void MainWindow::on_quitMenu_clicked() {
     QAction *actionSender = qobject_cast<QAction*>(sender());
     QList<QWidget*> actionWidgets = actionSender->associatedWidgets();
     QWidget *currentWindow = nullptr;
-    int numActionWidgets = actionWidgets.length();
     for(int i = 0; i < actionWidgets.length(); i++) {
         QWidget *tmp = actionWidgets.at(i);
         QWidget *parent = tmp->parentWidget();
@@ -81,7 +101,10 @@ void MainWindow::on_quitMenu_clicked() {
            currentWindow = widgetTmp;
         }
     }
-    currentWindow->parentWidget()->close();
+    // bool shouldWindowClose = closeWindowEvent();
+    // if(shouldWindowClose) {
+        currentWindow->parentWidget()->close();
+    // }
 }
 
 
@@ -435,10 +458,10 @@ void MainWindow::on_searchReplaceMenu() {
 
 
 void MainWindow::on_click_create_new_file() {
-    QWidget *window = new QWidget;
-    window->setAccessibleName(QString::number(_windowCount));
-    window->setObjectName("HELLO 2");
+    MyCustomWidget *customWidget = new MyCustomWidget();
 
+
+    QWidget *window = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout();
     window->setLayout(vbox);
 
@@ -468,21 +491,7 @@ void MainWindow::on_click_create_new_file() {
 
     QTextEdit *windowTextEdit = new QTextEdit();
     vbox->addWidget(windowTextEdit);
-    QPushButton *quitButton = new QPushButton("&Quit");
-    quitButton->setObjectName(QString::number(_windowCount));
 
-    QPushButton *wordCountBtn = new QPushButton("&Word Count");
-    vbox->addWidget(wordCountBtn);
-    QObject::connect(wordCountBtn, &QPushButton::released, this, &MainWindow::on_wordCount_clicked);
-
-    QPushButton *saveFileButton = new QPushButton("&Save File");
-    QPushButton *searchReplaceButton = new QPushButton("&Search and Replace");
-    QObject::connect(quitButton, &QPushButton::released, this, &MainWindow::on_quitButton_clicked);
-    QObject::connect(saveFileButton, &QPushButton::released, this, &MainWindow::on_saveFileButton_clicked);
-    QObject::connect(searchReplaceButton, &QPushButton::released, this, &MainWindow::on_searchReplace_clicked);
-    vbox->addWidget(quitButton);
-    vbox->addWidget(saveFileButton);
-    vbox->addWidget(searchReplaceButton);
     window->setAccessibleName(QString::number(_windowCount));
     window->setWindowTitle("Untitled Document");
     window->show();

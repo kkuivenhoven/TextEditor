@@ -34,8 +34,11 @@
 #include <QTextDocument>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QCloseEvent>
+#include <QEvent>
+#include <QObject>
 
-#include "custommenubar.h"
+#include "mycustomwidget.h""
 
 /* https://het.as.utexas.edu/HET/Software/html/richtext-syntaxhighlighter.html */
 
@@ -45,7 +48,7 @@ class MainWindow;
 
 class MainWindow : public QMainWindow
 {
-    Q_OBJECT
+    // Q_OBJECT
 
     QTabBar *_tabBar;
     int _tabCount;
@@ -65,6 +68,9 @@ public:
     QHash<QWidget*, int> _totalWindows;
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+protected:
+    // void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void on_saveFileButton_clicked();
@@ -89,9 +95,12 @@ private slots:
     void on_searchReplaceMenu();
 
     void on_copy_text_click();
+
 private:
     Ui::MainWindow *ui;
     QWidget* _getCurrentWindow(QAction *actionSender, QWidget *currentWindow);
+    bool closeWindowEvent();
+
 };
 
 #endif // MAINWINDOW_H

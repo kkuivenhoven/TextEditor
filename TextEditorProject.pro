@@ -26,11 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    custommenubar.cpp
+    mycustomwidget.cpp
 
 HEADERS += \
         mainwindow.h \
-    custommenubar.h
+    mycustomwidget.h
 
 FORMS += \
         mainwindow.ui
