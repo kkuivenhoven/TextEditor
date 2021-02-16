@@ -1,5 +1,8 @@
 #include "mycustomwidget.h"
 
+/* line number example
+ * https://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-example.html */
+/* https://www.qtcentre.org/threads/3977-QAbstractItemModel-for-dummies */
 MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QWidget *window = new QWidget();
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -7,22 +10,24 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
 
     QMenuBar *menu_bar = new QMenuBar(window);
 
-    QMenu *optionsMenu = menu_bar->addMenu(tr("&Options"));
-    QAction *quitMenuOption = optionsMenu->addAction("Quit", this, SLOT(quitOptionClicked()));
-    QAction *createNewFile = optionsMenu->addAction("Create New File", this, SLOT(createNewFileClicked()));
-    QAction *wordCount = optionsMenu->addAction("Word Count", this, SLOT(wordCountClicked()));
-    QAction *clearText = optionsMenu->addAction("Clear Text", this, SLOT(clearTextClicked()));
-    QAction *copyText = optionsMenu->addAction("Copy Text", this, SLOT(copyTextClicked()));
-    QAction *saveFile = optionsMenu->addAction("Save File", this, SLOT(saveFileClicked()));
-    QAction *openFile = optionsMenu->addAction("Open File", this, SLOT(openFileClicked()));
-    QAction *searchReplaceMenuItem = optionsMenu->addAction("Search and Replace", this, SLOT(searchReplaceClicked()));
+    QMenu *fileMenu = menu_bar->addMenu(tr("&File"));
+    QAction *openFile = fileMenu->addAction("Open File", this, SLOT(openFileClicked()));
+    QAction *createNewFile = fileMenu->addAction("Create New File", this, SLOT(createNewFileClicked()));
+    QAction *saveFile = fileMenu->addAction("Save File", this, SLOT(saveFileClicked()));
+    QAction *quitMenuOption = fileMenu->addAction("Quit", this, SLOT(quitOptionClicked()));
 
-    menu_bar->addMenu(optionsMenu);
+    QMenu *editMenu = menu_bar->addMenu(tr("&Edit"));
+    QAction *wordCount = editMenu->addAction("Word Count", this, SLOT(wordCountClicked()));
+    // QAction *clearText = editMenu->addAction("Clear Text", this, SLOT(clearTextClicked()));
+    // QAction *copyText = editMenu->addAction("Copy Text", this, SLOT(copyTextClicked()));
+    QAction *cutAndCopyToClipboard = editMenu->addAction("Cut and Copy to Clipboard", this, SLOT(cutAndCopyToClipboardClicked()));
+    QAction *searchReplaceMenuItem = editMenu->addAction("Search and Replace", this, SLOT(searchReplaceClicked()));
+
     vbox->addWidget(menu_bar);
 
     QLineEdit *searchBarEdit = new QLineEdit();
     vbox->addWidget(searchBarEdit);
-    QPushButton *searchBtn = new QPushButton("&Search");
+    QPushButton *searchBtn = new QPushButton("&Search and Highlight");
     vbox->addWidget(searchBtn);
     QPushButton *clearBtn = new QPushButton("&Clear");
     vbox->addWidget(clearBtn);
@@ -30,6 +35,7 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QObject::connect(clearBtn, &QPushButton::released, this, &MyCustomWidget::clearBtnClicked);
 
     QTextEdit *windowTextEdit = new QTextEdit();
+    // windowTextEdit->setMaximumWidth(50);
     vbox->addWidget(windowTextEdit);
     _textEditPerWindow.insert(_windowCount, windowTextEdit);
 
@@ -47,6 +53,12 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
 
 void MyCustomWidget::createNewFileClicked() {
     MyCustomWidget *newWidget = new MyCustomWidget();
+}
+
+
+void MyCustomWidget::cutAndCopyToClipboardClicked() {
+    copyTextClicked();
+    clearTextClicked();
 }
 
 
@@ -283,6 +295,9 @@ void MyCustomWidget::saveFileClicked() {
             QTextStream out(&file);
             out << plainText;
             file.close();
+            QFileInfo fileInfo(file.fileName());
+            QString fileName(fileInfo.fileName());
+            widget->setWindowTitle(fileName);
         } else {
             QMessageBox msgBox;
             msgBox.setText("Unable to save the document. "

@@ -38,7 +38,7 @@
 #include <QEvent>
 #include <QObject>
 
-#include "mycustomwidget.h""
+#include "mycustomwidget.h"
 
 /* https://het.as.utexas.edu/HET/Software/html/richtext-syntaxhighlighter.html */
 
