@@ -27,6 +27,7 @@
 #include <QAbstractItemView>
 #include <QTableWidget>
 #include <QPlainTextEdit>
+#include <QWidgetList>
 
 
 class MyCustomWidget : public QWidget
@@ -38,19 +39,17 @@ class MyCustomWidget : public QWidget
     QHash<QWidget*, int> _totalWindows;
     QHash<int, QLineEdit*> _searchBarRecord;
     int _windowCount = 0;
-    QString _lineNumbers = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10";
 
 public:
     MyCustomWidget(QWidget *parent = 0);
 
 public slots:
-    void quitOptionClicked();
+    void quitProgram();
+    void closeWindowOptionClicked();
     void searchBtnClicked();
     void clearBtnClicked();
     void createNewFileClicked();
     void wordCountClicked();
-    void clearTextClicked();
-    void copyTextClicked();
     void saveFileClicked();
     void openFileClicked();
     void searchReplaceClicked();
@@ -58,6 +57,9 @@ public slots:
 
 private:
     QWidget* _getCurrentWindow(QAction *actionSender, QWidget *currentWindow);
+    void _warningMessage(QWidget *widgetToClose);
+    void _clearTextClicked();
+    void _copyTextClicked();
 
 };
 

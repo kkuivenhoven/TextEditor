@@ -1,8 +1,5 @@
 #include "mycustomwidget.h"
 
-/* line number example
- * https://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-example.html */
-/* https://www.qtcentre.org/threads/3977-QAbstractItemModel-for-dummies */
 MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QWidget *window = new QWidget();
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -14,12 +11,11 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QAction *openFile = fileMenu->addAction("Open File", this, SLOT(openFileClicked()));
     QAction *createNewFile = fileMenu->addAction("Create New File", this, SLOT(createNewFileClicked()));
     QAction *saveFile = fileMenu->addAction("Save File", this, SLOT(saveFileClicked()));
-    QAction *quitMenuOption = fileMenu->addAction("Quit", this, SLOT(quitOptionClicked()));
+    QAction *closeWindowMenuOption = fileMenu->addAction("Close Window", this, SLOT(closeWindowOptionClicked()));
+    QAction *quitMenuOption = fileMenu->addAction("Quit Program", this, SLOT(quitProgram()));
 
     QMenu *editMenu = menu_bar->addMenu(tr("&Edit"));
     QAction *wordCount = editMenu->addAction("Word Count", this, SLOT(wordCountClicked()));
-    // QAction *clearText = editMenu->addAction("Clear Text", this, SLOT(clearTextClicked()));
-    // QAction *copyText = editMenu->addAction("Copy Text", this, SLOT(copyTextClicked()));
     QAction *cutAndCopyToClipboard = editMenu->addAction("Cut and Copy to Clipboard", this, SLOT(cutAndCopyToClipboardClicked()));
     QAction *searchReplaceMenuItem = editMenu->addAction("Search and Replace", this, SLOT(searchReplaceClicked()));
 
@@ -35,13 +31,14 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QObject::connect(clearBtn, &QPushButton::released, this, &MyCustomWidget::clearBtnClicked);
 
     QTextEdit *windowTextEdit = new QTextEdit();
-    // windowTextEdit->setMaximumWidth(50);
     vbox->addWidget(windowTextEdit);
     _textEditPerWindow.insert(_windowCount, windowTextEdit);
 
     _totalWindows.insert(window, _windowCount);
     _searchBarRecord.insert(_windowCount, searchBarEdit);
 
+    const QString name = "MainWindow";
+    window->setAccessibleName(name);
     window->setWindowFlags(Qt::WindowMinimizeButtonHint);
     window->setWindowTitle("Untitled Document");
     window->show();
@@ -51,14 +48,37 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
 }
 
 
+void MyCustomWidget::quitProgram() {
+    QWidgetList allWindows = QApplication::topLevelWidgets();
+    for(int i = 0; i < allWindows.size(); i++) {
+        if(allWindows.at(i)->accessibleName() == "MainWindow") {
+            _warningMessage(allWindows.at(i));
+        }
+    }
+}
+
+
+void MyCustomWidget::_warningMessage(QWidget *widgetToClose) {
+    if(widgetToClose != nullptr) {
+        QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Text Editor",
+                                    tr("Are you sure you want to exit \nthe Text Editor application?\n"),
+                                    QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                    QMessageBox::Yes);
+        if(resBtn == QMessageBox::Yes) {
+            widgetToClose->close();
+        }
+    }
+}
+
+
 void MyCustomWidget::createNewFileClicked() {
     MyCustomWidget *newWidget = new MyCustomWidget();
 }
 
 
 void MyCustomWidget::cutAndCopyToClipboardClicked() {
-    copyTextClicked();
-    clearTextClicked();
+    _copyTextClicked();
+    _clearTextClicked();
 }
 
 
@@ -96,26 +116,6 @@ void MyCustomWidget::openFileClicked() {
         QString contentsStr = QString::fromStdString(contents.toStdString());
         textEdit->setPlainText(contentsStr);
         widget->setWindowTitle(fileName);
-    }
-}
-
-
-void MyCustomWidget::clearTextClicked() {
-    QAction *actionSender = qobject_cast<QAction*>(sender());
-    QWidget *currentWindow = nullptr;
-    currentWindow = _getCurrentWindow(actionSender, currentWindow);
-    QWidget *widget = nullptr;
-    int place;
-    if(currentWindow != nullptr) {
-        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
-        if(i != _totalWindows.end()) {
-           widget = i.key();
-           place = i.value();
-        }
-        if(widget != nullptr) {
-            QTextEdit* textEdit = _textEditPerWindow[place];
-            textEdit->clear();
-        }
     }
 }
 
@@ -232,7 +232,7 @@ void MyCustomWidget::clearBtnClicked() {
 }
 
 
-void MyCustomWidget::quitOptionClicked() {
+void MyCustomWidget::closeWindowOptionClicked() {
     QAction *actionSender = qobject_cast<QAction*>(sender());
     QWidget *currentWindow = nullptr;
     currentWindow = _getCurrentWindow(actionSender, currentWindow);
@@ -243,27 +243,6 @@ void MyCustomWidget::quitOptionClicked() {
                                     QMessageBox::Yes);
         if(resBtn == QMessageBox::Yes) {
             currentWindow->parentWidget()->close();
-        }
-    }
-}
-
-
-void MyCustomWidget::copyTextClicked() {
-    QAction *actionSender = qobject_cast<QAction*>(sender());
-    QWidget *currentWindow = nullptr;
-    currentWindow = _getCurrentWindow(actionSender, currentWindow);
-    QWidget *widget = nullptr;
-    int place;
-    if(currentWindow != nullptr) {
-        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
-        if(i != _totalWindows.end()) {
-           widget = i.key();
-           place = i.value();
-        }
-        if(widget != nullptr) {
-            QTextEdit* textEdit = _textEditPerWindow[place];
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setText(textEdit->toPlainText());
         }
     }
 }
@@ -364,3 +343,45 @@ QWidget* MyCustomWidget::_getCurrentWindow(QAction *actionSender, QWidget *curre
     }
     return currentWindow;
 }
+
+
+void MyCustomWidget::_clearTextClicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            textEdit->clear();
+        }
+    }
+}
+
+
+void MyCustomWidget::_copyTextClicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QTextEdit* textEdit = _textEditPerWindow[place];
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(textEdit->toPlainText());
+        }
+    }
+}
+
