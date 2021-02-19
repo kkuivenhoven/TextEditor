@@ -28,6 +28,7 @@
 #include <QTableWidget>
 #include <QPlainTextEdit>
 #include <QWidgetList>
+#include <QVector>
 
 
 class MyCustomWidget : public QWidget
@@ -39,6 +40,7 @@ class MyCustomWidget : public QWidget
     QHash<QWidget*, int> _totalWindows;
     QHash<int, QLineEdit*> _searchBarRecord;
     int _windowCount = 0;
+    QString _textToPreserve = "";
 
 public:
     MyCustomWidget(QWidget *parent = 0);

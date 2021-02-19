@@ -173,6 +173,7 @@ void MyCustomWidget::searchBtnClicked() {
         plainText.replace("\n", " RePlAcE_tHiS ");
         lineEdit = _searchBarRecord[place];
         QString wordToHighLight = lineEdit->text().trimmed();
+        QVector<int> indiceRecord;
 
         QStringList list = plainText.split(" ");
         QStringList alteredList;
@@ -188,8 +189,10 @@ void MyCustomWidget::searchBtnClicked() {
                 }
             } else {
                 alteredList << "<br>";
+                indiceRecord << i;
             }
         }
+        _newLineIndices.insert(place, indiceRecord);
         QString newList = alteredList.join(" ");
         textEdit->setHtml(newList);
     }
@@ -211,6 +214,8 @@ void MyCustomWidget::clearBtnClicked() {
     if(widget != nullptr) {
         textEdit = _textEditPerWindow[place];
         plainText = textEdit->toPlainText();
+        plainText.replace("\n", " RePlAcE_tHiS ");
+
         lineEdit = _searchBarRecord[place];
         QString wordToHighLight = lineEdit->text();
 
@@ -221,6 +226,9 @@ void MyCustomWidget::clearBtnClicked() {
                 QString tmp = "<span style='background-color: none;'>";
                 tmp += list.at(i);
                 tmp += "</span>";
+                alteredList << tmp;
+            } else if(list.at(i) == "RePlAcE_tHiS") {
+                QString tmp = "<br>";
                 alteredList << tmp;
             } else {
                 alteredList << list.at(i);
