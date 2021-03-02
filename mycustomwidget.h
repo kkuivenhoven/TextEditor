@@ -35,10 +35,12 @@ class MyCustomWidget : public QWidget
 {
     Q_OBJECT
 
+    QHash<int, QString> _highlightedWord;
     QHash<int, QTextEdit*> _textEditPerWindow;
     QHash<int, QTextEdit*> _columnPerWindow;
     QHash<QWidget*, int> _totalWindows;
     QHash<int, QLineEdit*> _searchBarRecord;
+    QHash<int, QVector<int>> _newLineIndices;
     int _windowCount = 0;
     QString _textToPreserve = "";
 
@@ -48,14 +50,16 @@ public:
 public slots:
     void quitProgram();
     void closeWindowOptionClicked();
-    void searchBtnClicked();
-    void clearBtnClicked();
+    // void searchBtnClicked();
+    // void clearBtnClicked();
     void createNewFileClicked();
     void wordCountClicked();
     void saveFileClicked();
     void openFileClicked();
     void searchReplaceClicked();
     void cutAndCopyToClipboardClicked();
+    void searchHighlightClicked();
+    void clearSearchHighlightClicked();
 
 private:
     QWidget* _getCurrentWindow(QAction *actionSender, QWidget *currentWindow);

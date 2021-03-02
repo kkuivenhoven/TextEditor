@@ -18,24 +18,28 @@ MyCustomWidget::MyCustomWidget(QWidget *parent) : QWidget(parent) {
     QAction *wordCount = editMenu->addAction("Word Count", this, SLOT(wordCountClicked()));
     QAction *cutAndCopyToClipboard = editMenu->addAction("Cut and Copy to Clipboard", this, SLOT(cutAndCopyToClipboardClicked()));
     QAction *searchReplaceMenuItem = editMenu->addAction("Search and Replace", this, SLOT(searchReplaceClicked()));
+    QAction *searchAndHighLight = editMenu->addAction("Search and Highlight", this, SLOT(searchHighlightClicked()));
+    QAction *clearSearchAndHighLight = editMenu->addAction("Clear Search and Highlight", this, SLOT(clearSearchHighlightClicked()));
 
     vbox->addWidget(menu_bar);
 
+    /*
     QLineEdit *searchBarEdit = new QLineEdit();
     vbox->addWidget(searchBarEdit);
     QPushButton *searchBtn = new QPushButton("&Search and Highlight");
     vbox->addWidget(searchBtn);
     QPushButton *clearBtn = new QPushButton("&Clear");
     vbox->addWidget(clearBtn);
-    QObject::connect(searchBtn, &QPushButton::released, this, &MyCustomWidget::searchBtnClicked);
-    QObject::connect(clearBtn, &QPushButton::released, this, &MyCustomWidget::clearBtnClicked);
+    // QObject::connect(searchBtn, &QPushButton::released, this, &MyCustomWidget::searchBtnClicked);
+    // QObject::connect(clearBtn, &QPushButton::released, this, &MyCustomWidget::clearBtnClicked);
+    */
 
     QTextEdit *windowTextEdit = new QTextEdit();
     vbox->addWidget(windowTextEdit);
     _textEditPerWindow.insert(_windowCount, windowTextEdit);
 
     _totalWindows.insert(window, _windowCount);
-    _searchBarRecord.insert(_windowCount, searchBarEdit);
+    // _searchBarRecord.insert(_windowCount, searchBarEdit);
 
     const QString name = "MainWindow";
     window->setAccessibleName(name);
@@ -58,14 +62,110 @@ void MyCustomWidget::quitProgram() {
 }
 
 
-void MyCustomWidget::_warningMessage(QWidget *widgetToClose) {
-    if(widgetToClose != nullptr) {
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Text Editor",
-                                    tr("Are you sure you want to exit \nthe Text Editor application?\n"),
-                                    QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
-                                    QMessageBox::Yes);
-        if(resBtn == QMessageBox::Yes) {
-            widgetToClose->close();
+void MyCustomWidget::clearSearchHighlightClicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    QTextEdit* textEdit;
+    QString plainText;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            textEdit = _textEditPerWindow[place];
+            plainText = textEdit->toPlainText();
+            plainText.replace("\n", " RePlAcE_tHiS ");
+
+            QString wordToHighLight = _highlightedWord[place];
+
+            QStringList list = plainText.split(" ");
+            QStringList alteredList;
+            for(int i = 0; i < list.size(); i++) {
+                if(list.at(i) == wordToHighLight) {
+                    QString tmp = "<span style='background-color: none;'>";
+                    tmp += list.at(i);
+                    tmp += "</span>";
+                    alteredList << tmp;
+                } else if(list.at(i) == "RePlAcE_tHiS") {
+                    QString tmp = "<br>";
+                    alteredList << tmp;
+                } else {
+                    alteredList << list.at(i);
+                }
+            }
+            QString newList = alteredList.join(" ");
+            textEdit->setHtml(newList);
+        }
+    }
+}
+
+
+void MyCustomWidget::searchHighlightClicked() {
+    QAction *actionSender = qobject_cast<QAction*>(sender());
+    QWidget *currentWindow = nullptr;
+    currentWindow = _getCurrentWindow(actionSender, currentWindow);
+    QWidget *widget = nullptr;
+    int place;
+    QTextEdit* textEdit;
+    QString plainText;
+    if(currentWindow != nullptr) {
+        QHash<QWidget*, int>::const_iterator i = _totalWindows.find(currentWindow->parentWidget());
+        if(i != _totalWindows.end()) {
+           widget = i.key();
+           place = i.value();
+        }
+        if(widget != nullptr) {
+            QDialog *dialog = new QDialog(widget);
+            QFormLayout form(dialog);
+            form.addRow(new QLabel("Word to highlight: "));
+            QString value1 = QString(" Word: ");
+            QLineEdit *spinBox1 = new QLineEdit(dialog);
+            form.addRow(value1, spinBox1);
+            QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                                       Qt::Horizontal, dialog);
+            form.addRow(&buttonBox);
+            QObject::connect(&buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+            QObject::connect(&buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+            if(dialog->exec() == QDialog::Accepted) {
+                QString wordToHighLight = spinBox1->text();
+                textEdit = _textEditPerWindow[place];
+                plainText = textEdit->toPlainText();
+
+                plainText.replace("\n", " RePlAcE_tHiS ");
+                _highlightedWord.insert(place, wordToHighLight);
+                // lineEdit = _searchBarRecord[place];
+                // QString wordToHighLight = lineEdit->text().trimmed();
+                QVector<int> indiceRecord;
+
+                QStringList list = plainText.split(" ");
+                QStringList alteredList;
+                for(int i = 0; i < list.size(); i++) {
+                    if(list.at(i) != "RePlAcE_tHiS") {
+                        if(list.at(i) == wordToHighLight) {
+                            QString tmp = "<span style='background-color: red;'>";
+                            tmp += list.at(i);
+                            tmp += "</span>";
+                            alteredList << tmp;
+                        } else {
+                            alteredList << list.at(i);
+                        }
+                    } else {
+                        alteredList << "<br>";
+                        indiceRecord << i;
+                    }
+                }
+                _newLineIndices.insert(place, indiceRecord);
+                QString newList = alteredList.join(" ");
+                textEdit->setHtml(newList);
+
+            } else {
+                dialog->close();
+            }
         }
     }
 }
@@ -154,6 +254,7 @@ void MyCustomWidget::wordCountClicked() {
 }
 
 
+/*
 void MyCustomWidget::searchBtnClicked() {
     QPushButton *buttonSender = qobject_cast<QPushButton*>(sender());
     QHash<QWidget*, int>::const_iterator i = _totalWindows.find(buttonSender->parentWidget());
@@ -238,7 +339,7 @@ void MyCustomWidget::clearBtnClicked() {
         textEdit->setHtml(newList);
     }
 }
-
+*/
 
 void MyCustomWidget::closeWindowOptionClicked() {
     QAction *actionSender = qobject_cast<QAction*>(sender());
@@ -389,6 +490,19 @@ void MyCustomWidget::_copyTextClicked() {
             QTextEdit* textEdit = _textEditPerWindow[place];
             QClipboard *clipboard = QApplication::clipboard();
             clipboard->setText(textEdit->toPlainText());
+        }
+    }
+}
+
+
+void MyCustomWidget::_warningMessage(QWidget *widgetToClose) {
+    if(widgetToClose != nullptr) {
+        QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Text Editor",
+                                    tr("Are you sure you want to exit \nthe Text Editor application?\n"),
+                                    QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                    QMessageBox::Yes);
+        if(resBtn == QMessageBox::Yes) {
+            widgetToClose->close();
         }
     }
 }
